@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+	<PropertyGroup>
+		<ProgramFolder>C:\Games\Potion Craft Alchemist Simulator</ProgramFolder>
+		<ProgramFolder Condition="!Exists('$(ProgramFolder)')">..\..\..\@non-backup\PotionCraft sources</ProgramFolder>
+		<ModFolder>$(ProgramFolder)\BepInEx\plugins</ModFolder>
+		<ModFolder Condition="!Exists('$(ModFolder)')">..\..\..\@non-backup\PotionCraft sources</ModFolder>
+	</PropertyGroup>
+</Project>

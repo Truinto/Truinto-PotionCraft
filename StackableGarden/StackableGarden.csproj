@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Version>1.0.0.3</Version>
+		<AssemblyName>StackableGarden</AssemblyName>
+		<RootNamespace>StackableGarden</RootNamespace>
+		<TargetFramework>net472</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Reference Private="false" Include="PotionCraft.Scripts" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/PotionCraft.Scripts.dll" />
+		
+		<Reference Private="false" Include="0Harmony" HintPath="$(ProgramFolder)/BepInEx/core/0Harmony.dll" />
+		<Reference Private="false" Include="BepInEx" HintPath="$(ProgramFolder)/BepInEx/core/BepInEx.dll" />
+		<Reference Private="false" Include="PotionCraft.Core" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/PotionCraft.Core.dll" />
+		<Reference Private="false" Include="PotionCraft.SceneLoader" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/PotionCraft.SceneLoader.dll" />
+		<Reference Private="false" Include="PotionCraft.InputSystem" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/PotionCraft.InputSystem.dll" />
+		<Reference Private="false" Include="UnityEngine" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/UnityEngine.dll" />
+		<Reference Private="false" Include="UnityEngine.CoreModule" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/UnityEngine.CoreModule.dll" />
+		<Reference Private="false" Include="UnityEngine.InputLegacyModule" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/UnityEngine.InputLegacyModule.dll" />
+		<Reference Private="false" Include="UnityEngine.Physics2DModule" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/UnityEngine.Physics2DModule.dll" />
+		<Reference Private="false" Include="Newtonsoft.Json" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/Newtonsoft.Json.dll" />
+
+		<!--<Reference Private="false" Include="UnityMod" HintPath="$(SolutionDir)/@Shared/UnityMod-net472.dll" />-->
+	</ItemGroup>
+
+	<!-- Target Automation -->
+	<ItemGroup>
+		<VersioningTask_In Include="$(MSBuildThisFileFullPath)" />
+		<VersioningTask_In Include="changelog.md" />
+		<VersioningTask_Out DropRevision="never" Include="$(MSBuildThisFileFullPath)" />
+
+		<!--<TargetMergeItems Include="$(SolutionDir)/@Shared/UnityMod-net472.dll" />-->
+
+		<TargetCopyTarget Include="$(ModFolder)/" />
+		<TargetCopyDelete Include="$(ModFolder)/$(TargetName).xml" />
+
+		<TargetZipItems Include="$(ModFolder)/$(TargetName).dll" />
+		<TargetZipTarget Include="$(SolutionDir)/publish/$(TargetName).zip" />
+	</ItemGroup>
+</Project>
