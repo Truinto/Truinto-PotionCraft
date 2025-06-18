@@ -41,7 +41,6 @@ namespace ShareRecipe
         {
             if (F4Key?.State == State.JustDowned)
             {
-                Debug.Log("Hotkey F4");
                 ReloadConfig();
             }
         }
@@ -57,7 +56,7 @@ namespace ShareRecipe
                 var serializedRecipe = recipe.GetSerializedRecipe();
                 var json = JsonTool.Serialize(serializedRecipe, JsonTool.JsonOptions);
                 GUIUtility.systemCopyBuffer = json;
-                Notification.ShowText("ShareRecipe", "Recipe copied", Notification.TextType.EventText);
+                Notification.ShowText("ShareRecipe", "Recipe copied", Notification.TextType.LevelUpText);
             } catch (Exception e) { Debug.Log(e.ToString()); }
         }
 

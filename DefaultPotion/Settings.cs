@@ -7,7 +7,9 @@ namespace DefaultPotion
         [JsonIgnore] public string? FilePath;
 
         [JsonInclude] public int Version = 1;
+        [JsonInclude] public bool ResetSkinOnLoad = true;
         [JsonInclude] public Dictionary<string, PotionProperties> Defaults = new();
+        [JsonInclude] public PotionProperties Lowlander = new();
 
         public void Save()
         {

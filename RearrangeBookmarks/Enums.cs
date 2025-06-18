@@ -14,6 +14,5 @@
         Evenly,
         Left,
         Right,
-        Snap,
     }
 }

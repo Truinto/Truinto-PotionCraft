@@ -35,7 +35,6 @@ namespace RearrangeBookmarks
         {
             if (F4Key?.State == State.JustDowned)
             {
-                Debug.Log("Hotkey F4");
                 ReloadConfig();
             }
             if (RearrangeKey?.State == State.JustDowned)
