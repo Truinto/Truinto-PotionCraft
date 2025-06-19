@@ -11,14 +11,17 @@ using UnityEngine;
 
 namespace RearrangeBookmarks
 {
-    [BepInPlugin("Truinto.RearrangeBookmarks", "RearrangeBookmarks", "1.0.0")]
+    [BepInPlugin("Truinto.RearrangeBookmarks", "RearrangeBookmarks", "1.0.1")]
     public partial class Plugin : BaseUnityPlugin
     {
         private Button? F4Key;
-        private Button? RearrangeKey;
+        private Command? RearrangeCommand;
 
         public void Awake()
         {
+            F4Key = KeyboardKey.Get(KeyCode.F4);
+            RearrangeCommand = new Command("RearrangeBookmarks", []);
+            RearrangeCommand.onDownedEvent.AddListener(RearrangeBookmarks);
             ReloadConfig();
             //Harmony.CreateAndPatchAll(typeof(Plugin));
             ObjectsLoader.onLoadingEnd.AddListener(() => BookmarkOrganizerUpdate = Type.GetType("PotionCraftBookmarkOrganizer.Scripts.Services.RecipeBookService, PotionCraftBookmarkOrganizer", false)?.GetMethod("UpdateBookmarkGroupsForCurrentRecipe"));
@@ -27,8 +30,7 @@ namespace RearrangeBookmarks
         public void ReloadConfig()
         {
             Settings.Load();
-            F4Key ??= KeyboardKey.Get(KeyCode.F4);
-            RearrangeKey = KeyboardKey.Get(Settings.State.RearrangeKey);
+            RearrangeCommand!.hotKeys = [new HotKey(KeyboardKey.Get(Settings.State.RearrangeKey))];
         }
 
         public void Update()
@@ -36,11 +38,6 @@ namespace RearrangeBookmarks
             if (F4Key?.State == State.JustDowned)
             {
                 ReloadConfig();
-            }
-            if (RearrangeKey?.State == State.JustDowned)
-            {
-                Debug.Log("Hotkey RearrangeBookmark");
-                RearrangeBookmarks();
             }
         }
 

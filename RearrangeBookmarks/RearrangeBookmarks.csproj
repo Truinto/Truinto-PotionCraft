@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<Version>1.0.0.55</Version>
+		<Version>1.0.1.1</Version>
 		<AssemblyName>RearrangeBookmarks</AssemblyName>
 		<RootNamespace>RearrangeBookmarks</RootNamespace>
 		<TargetFramework>net472</TargetFramework>
@@ -16,7 +16,7 @@
 		<Reference Private="false" Include="BepInEx" HintPath="$(ProgramFolder)/BepInEx/core/BepInEx.dll" />
 		<Reference Private="false" Include="PotionCraft.Core" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/PotionCraft.Core.dll" />
 		<Reference Private="false" Include="PotionCraft.SceneLoader" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/PotionCraft.SceneLoader.dll" />
-		<Reference Private="false" Include="PotionCraft.InputSystem" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/PotionCraft.InputSystem.dll" />
+		<Reference Private="false" Include="PotionCraft.InputSystem" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/PotionCraft.InputSystem.dll" Publicize="true" />
 		<Reference Private="false" Include="UnityEngine" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/UnityEngine.dll" />
 		<Reference Private="false" Include="UnityEngine.CoreModule" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/UnityEngine.CoreModule.dll" />
 		<Reference Private="false" Include="UnityEngine.InputLegacyModule" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/UnityEngine.InputLegacyModule.dll" />
