@@ -7,6 +7,10 @@ Index
 * [Installation](#installation)
 * [Contact](#contact)
 * [Content](#content)
+* [DefaultPotion](#defaultpotion)
+* [RearrangeBookmarks](#rearrangebookmarks)
+* [ShareRecipe](#sharerecipe)
+* [StackableGarden](#stackablegarden)
 * [Build](#build)
 
 Disclaimers
@@ -29,7 +33,7 @@ Content
 -----------
 * DefaultPotion: Potion bases all have their own default bottle/sticker setting. These are saved globally and will carry over to any save file.
 * RearrangeBookmarks: Press space-bar to align all recipes. Some configuration possible. Works with BookmarkOrganizer.
-* SharedRecipe: Adds hotkeys (CTRL+C; CTRL+V) to export/import recipes and (CTRL+D; CTRL+F) to export/import the whole recipe book. Uses clipboard. Works with BookmarkOrganizer.
+* ShareRecipe: Adds hotkeys (CTRL+C; CTRL+V) to export/import recipes and (CTRL+D; CTRL+F) to export/import the whole recipe book. Uses clipboard. Works with BookmarkOrganizer.
 * StackableGarden: Removes collision from garden plants/crystals.
 
 DefaultPotion
@@ -40,7 +44,7 @@ RearrangeBookmarks
 -----------
 When you press space-bar on while the recipe book is open, it will rearrange all the bookmarks. Unlike the mod 'SortBookmarks' it will not change the order of recipes. Configuration is saved in the BepInEx config folder. Each rail can be set individually. If a rail is not listed, it will not be modified at all. Alignment can be left, right, or evenly spaced. Offset is useful to indent a row. While Limit can be used to override the normal boundaries. One unit is equal to the width of one bookmark. Empty bookmarks are stacked on top of each other, that behavior can be turned off.
 
-SharedRecipe
+ShareRecipe
 -----------
 CTRL+C serializes the currently shown bookmark into your clipboard. CTRL+V deserializes the same data, if the current page is blank. Otherwise no action is done. CTRL+D serializes the whole recipe book into your clipboard. CTRL+F deserializes the same data. Doing so will destroy the recipe book. It also copies the count of empty bookmarks. This can be used for cheating.
 
