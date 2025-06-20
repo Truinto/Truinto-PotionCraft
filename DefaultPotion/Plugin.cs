@@ -17,7 +17,7 @@ using UnityEngine;
 
 namespace DefaultPotion
 {
-    [BepInPlugin("Truinto.DefaultPotion", "DefaultPotion", "1.0.0")]
+    [BepInPlugin("Truinto.DefaultPotion", "DefaultPotion", "1.0.1")]
     public class Plugin : BaseUnityPlugin
     {
         private Button? F4Key;
@@ -62,10 +62,8 @@ namespace DefaultPotion
             // reset current potion skin
             if (!Settings.State.ResetSkinOnLoad)
                 return;
-            if (Managers.Potion.potionCraftPanel.GetRecipeBookPageContent() is not Potion currentPotion)
-                return;
-            int currentTier = currentPotion.GetMaxTier();
-            int currentCount = currentPotion.GetUsedComponents().GetSummaryComponents().Count(c => c.Component is Ingredient);
+            int currentTier = (Managers.Potion.potionCraftPanel.GetRecipeBookPageContent() as Potion)?.GetMaxTier() ?? 0;
+            int currentCount = Managers.Potion.PotionUsedComponents.GetSummaryComponents().Count(c => c.Component is Ingredient);
             SetDefaultProps(currentTier);
             if (currentCount == 1)
                 SetLowlanderProps(currentTier);
