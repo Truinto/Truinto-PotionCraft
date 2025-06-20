@@ -1,6 +1,8 @@
 ﻿using BepInEx;
 using HarmonyLib;
 using PotionCraft.InputSystem;
+using PotionCraft.ManagersSystem;
+using PotionCraft.NotificationSystem;
 using PotionCraft.ObjectBased.UIElements.Bookmarks;
 using PotionCraft.ObjectBased.UIElements.Books;
 using PotionCraft.ObjectBased.UIElements.Books.RecipeBook;
@@ -23,7 +25,7 @@ namespace RearrangeBookmarks
             RearrangeCommand = new Command("RearrangeBookmarks", []);
             RearrangeCommand.onDownedEvent.AddListener(RearrangeBookmarks);
             ReloadConfig();
-            //Harmony.CreateAndPatchAll(typeof(Plugin));
+            Harmony.CreateAndPatchAll(typeof(Plugin));
             ObjectsLoader.onLoadingEnd.AddListener(() => BookmarkOrganizerUpdate = Type.GetType("PotionCraftBookmarkOrganizer.Scripts.Services.RecipeBookService, PotionCraftBookmarkOrganizer", false)?.GetMethod("UpdateBookmarkGroupsForCurrentRecipe"));
         }
 
@@ -205,5 +207,47 @@ namespace RearrangeBookmarks
         }
 
         public static MethodInfo? BookmarkOrganizerUpdate;
+
+        #region Patches
+
+        [HarmonyPatch(typeof(BookmarkController), nameof(BookmarkController.LoadFrom))]
+        [HarmonyPostfix]
+        [HarmonyPriority(Priority.First)]
+        public static void Postfix(BookmarkController __instance)
+        {
+            if (ReferenceEquals(__instance, RecipeBook.Instance.bookmarkControllersGroupController.controllers[0].bookmarkController))
+            {
+                var type = Type.GetType("PotionCraftBookmarkOrganizer.Scripts.Storage.StaticStorage, PotionCraftBookmarkOrganizer", false);
+                if (type == null)
+                    return;
+                var list = (List<int>)type.GetField("SavedRecipePositions").GetValue(null);
+                if (list == null)
+                    return;
+                var savedRecipes = Managers.SaveLoad.SelectedProgressState.savedRecipes;
+                int bookmarkCount = __instance.rails.Sum(s => s.railBookmarks.Count);
+                Debug.Log($"[RearrangeBookmarks] savedRecipes={savedRecipes.Count} bookmarks={bookmarkCount} SavedRecipePositions count={list.Count}");
+
+                if (savedRecipes.Count != list.Count)
+                    Notification.ShowText("ERROR", "BookmarkOrganizer count mismatch", Notification.TextType.LevelUpText);
+
+                //var duplicate = new List<int>();
+                //for (int i = 0; i < list.Count; i++)
+                //{
+                //    if (duplicate.Contains(list[i]))
+                //        Debug.Log($" {i} -> {list[i]}  duplicate!!");
+                //    else
+                //        Debug.Log($" {i} -> {list[i]}");
+                //    duplicate.Add(list[i]);
+                //}
+
+                //while (savedRecipes.Count < list.Count)
+                //    savedRecipes.Add(default);
+
+                //while (list.Count < savedRecipes.Count)
+                //    list.Add(list.Count - 1);
+            }
+        }
+
+        #endregion
     }
 }

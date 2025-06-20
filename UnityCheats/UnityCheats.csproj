@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<Version>1.0.0.11</Version>
+		<Version>1.0.0.18</Version>
 		<AssemblyName>UnityCheats</AssemblyName>
 		<RootNamespace>UnityCheats</RootNamespace>
 		<TargetFramework>net472</TargetFramework>
