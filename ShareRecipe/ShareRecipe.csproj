@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<Version>1.0.0.25</Version>
+		<Version>1.0.1.2</Version>
 		<AssemblyName>ShareRecipe</AssemblyName>
 		<RootNamespace>ShareRecipe</RootNamespace>
 		<TargetFramework>net472</TargetFramework>

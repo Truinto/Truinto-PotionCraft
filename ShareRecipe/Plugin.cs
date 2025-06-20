@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace ShareRecipe
 {
-    [BepInPlugin("Truinto.ShareRecipe", "ShareRecipe", "1.0.0")]
+    [BepInPlugin("Truinto.ShareRecipe", "ShareRecipe", "1.0.1")]
     public partial class Plugin : BaseUnityPlugin
     {
         private Button? F4Key;
@@ -49,6 +49,8 @@ namespace ShareRecipe
         {
             try
             {
+                if (!ObjectsLoader.isLoaded || GameUnloader.IsUnloadingStarted() || !RecipeBook.Instance.gameObject.activeInHierarchy)
+                    return;
                 IRecipeBookPageContent recipe = RecipeBook.Instance.savedRecipes[RecipeBook.Instance.currentPageIndex];
                 if (recipe is null)
                     return;
@@ -64,6 +66,8 @@ namespace ShareRecipe
         {
             try
             {
+                if (!ObjectsLoader.isLoaded || GameUnloader.IsUnloadingStarted() || !RecipeBook.Instance.gameObject.activeInHierarchy)
+                    return;
                 if (RecipeBook.Instance.savedRecipes[RecipeBook.Instance.currentPageIndex] != null)
                     return;
                 string json = GUIUtility.systemCopyBuffer;
@@ -85,6 +89,8 @@ namespace ShareRecipe
         {
             try
             {
+                if (!ObjectsLoader.isLoaded || GameUnloader.IsUnloadingStarted() || !RecipeBook.Instance.gameObject.activeInHierarchy)
+                    return;
                 var recipebook = new SerializedRecipebook();
 
                 // get data
@@ -113,6 +119,8 @@ namespace ShareRecipe
         {
             try
             {
+                if (!ObjectsLoader.isLoaded || GameUnloader.IsUnloadingStarted() || !RecipeBook.Instance.gameObject.activeInHierarchy)
+                    return;
                 string json = GUIUtility.systemCopyBuffer;
                 var recipebook = JsonTool.Deserialize<SerializedRecipebook>(json, JsonTool.JsonOptions) ?? throw new Exception("invalid json data");
 
