@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<Version>1.0.0.18</Version>
+		<Version>1.0.0.51</Version>
 		<AssemblyName>UnityCheats</AssemblyName>
 		<RootNamespace>UnityCheats</RootNamespace>
 		<TargetFramework>net472</TargetFramework>
@@ -11,7 +11,7 @@
 
 	<ItemGroup>
 		<Reference Private="false" Include="PotionCraft.Scripts" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/PotionCraft.Scripts.dll" Publicize="true" />
-		
+
 		<Reference Private="false" Include="0Harmony" HintPath="$(ProgramFolder)/BepInEx/core/0Harmony.dll" />
 		<Reference Private="false" Include="BepInEx" HintPath="$(ProgramFolder)/BepInEx/core/BepInEx.dll" />
 		<Reference Private="false" Include="PotionCraft.Core" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/PotionCraft.Core.dll" />
@@ -24,6 +24,8 @@
 		<Reference Private="false" Include="Newtonsoft.Json" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/Newtonsoft.Json.dll" />
 
 		<!--<Reference Private="false" Include="UnityMod" HintPath="$(SolutionDir)/@Shared/UnityMod-net472.dll" />-->
+
+		<Compile Include="$(SharedDir)General/Collection.cs" Link="Shared/Collection.cs" />
 	</ItemGroup>
 
 	<!-- Target Automation -->

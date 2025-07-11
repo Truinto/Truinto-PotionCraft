@@ -9,7 +9,7 @@ namespace ShareRecipe
         {
             [JsonInclude] public List<SerializedRecipe?> SavedRecipes = new();
             [JsonInclude] public Dictionary<RecipeBookPageContentType, int> RecipeTypes = new();
-            [JsonInclude] public List<BookmarkController.SerializedBookmarkController> Controllers = new();
+            [JsonInclude] public List<SerializedBookmarkController> Controllers = new();
             [JsonInclude] public string? BookmarkOrganizer;
         }
     }

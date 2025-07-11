@@ -5,14 +5,17 @@ using PotionCraft.NotificationSystem;
 using PotionCraft.ObjectBased.UIElements.Books.RecipeBook;
 using PotionCraft.SceneLoader;
 using Shared.JsonNS;
+using System.IO.Compression;
+using System.Text;
 using UnityEngine;
 
 namespace ShareRecipe
 {
-    [BepInPlugin("Truinto.ShareRecipe", "ShareRecipe", "1.0.1")]
+    [BepInPlugin("Truinto.ShareRecipe", "ShareRecipe", "1.0.2")]
     public partial class Plugin : BaseUnityPlugin
     {
-        private Button? F4Key;
+        private static Button? F4Key;
+        private static Button? ShiftKey;
 
         public void Awake()
         {
@@ -35,6 +38,7 @@ namespace ShareRecipe
         {
             Settings.Load();
             F4Key ??= KeyboardKey.Get(KeyCode.F4);
+            ShiftKey ??= KeyboardKey.Get(KeyCode.LeftShift);
         }
 
         public void Update()
@@ -56,7 +60,16 @@ namespace ShareRecipe
                     return;
 
                 var serializedRecipe = recipe.GetSerializedRecipe();
-                var json = JsonTool.Serialize(serializedRecipe, JsonTool.JsonOptions);
+                string json;
+                if (ShiftKey?.State == State.Downed)
+                {
+                    json = JsonTool.Serialize(serializedRecipe, JsonTool.JsonOptions);
+                }
+                else
+                {
+                    json = JsonTool.Serialize(serializedRecipe, JsonTool.JsonOptionsCompact);
+                    json = Compress(json, "0");
+                }
                 GUIUtility.systemCopyBuffer = json;
                 Notification.ShowText("ShareRecipe", "Recipe copied", Notification.TextType.LevelUpText);
             } catch (Exception e) { Debug.Log(e.ToString()); }
@@ -71,9 +84,10 @@ namespace ShareRecipe
                 if (RecipeBook.Instance.savedRecipes[RecipeBook.Instance.currentPageIndex] != null)
                     return;
                 string json = GUIUtility.systemCopyBuffer;
-                if (json is null or "")
+                if (json is null || json.Length < 2)
                     return;
 
+                json = Decompress(json);
                 var serializedRecipe = JsonTool.Deserialize<SerializedRecipe>(json, JsonTool.JsonOptions);
                 var recipe = SerializedRecipe.DeserializeRecipe(serializedRecipe);
 
@@ -108,7 +122,16 @@ namespace ShareRecipe
                     recipebook.BookmarkOrganizer = (string)parameters[0];
                 }
 
-                var json = JsonTool.Serialize(recipebook, JsonTool.JsonOptions);
+                string json;
+                if (ShiftKey?.State == State.Downed)
+                {
+                    json = JsonTool.Serialize(recipebook, JsonTool.JsonOptions);
+                }
+                else
+                {
+                    json = JsonTool.Serialize(recipebook, JsonTool.JsonOptionsCompact);
+                    json = Compress(json, "1");
+                }
                 GUIUtility.systemCopyBuffer = json;
 
                 Notification.ShowText("ShareRecipe", "Book copied", Notification.TextType.LevelUpText);
@@ -122,6 +145,9 @@ namespace ShareRecipe
                 if (!ObjectsLoader.isLoaded || GameUnloader.IsUnloadingStarted() || !RecipeBook.Instance.gameObject.activeInHierarchy)
                     return;
                 string json = GUIUtility.systemCopyBuffer;
+                if (json is null || json.Length < 2)
+                    return;
+                json = Decompress(json);
                 var recipebook = JsonTool.Deserialize<SerializedRecipebook>(json, JsonTool.JsonOptions) ?? throw new Exception("invalid json data");
 
                 // override save state
@@ -154,6 +180,34 @@ namespace ShareRecipe
                 Notification.ShowText("ShareRecipe", "Book pasted", Notification.TextType.LevelUpText);
                 Debug.Log($"[ShareRecipe] Import Bookmarks controller={RecipeBook.Instance.bookmarkControllersGroupController.GetAllBookmarksList().Count} recipes={RecipeBook.Instance.savedRecipes.Count}");
             } catch (Exception e) { Debug.Log(e.ToString()); }
+        }
+
+        public static string Compress(string json, string prefix)
+        {
+            var bytes = Encoding.UTF8.GetBytes(json);
+            using var msi = new MemoryStream(bytes);
+            using var mso = new MemoryStream();
+            using (var gs = new GZipStream(mso, CompressionMode.Compress))
+            {
+                msi.CopyTo(gs);
+            }
+            return prefix + Convert.ToBase64String(mso.ToArray());
+        }
+
+        public static string Decompress(string base64)
+        {
+            if (base64[0] is '0' or '1')
+            {
+                var bytes = Convert.FromBase64String(base64.Substring(1));
+                using var msi = new MemoryStream(bytes);
+                using var mso = new MemoryStream();
+                using (var gs = new GZipStream(msi, CompressionMode.Decompress))
+                {
+                    gs.CopyTo(mso);
+                }
+                return Encoding.UTF8.GetString(mso.ToArray());
+            }
+            return base64;
         }
     }
 }
