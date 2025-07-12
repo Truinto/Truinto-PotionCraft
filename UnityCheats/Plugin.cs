@@ -20,7 +20,7 @@ using JetBrains.Annotations;
 
 namespace UnityCheats
 {
-    [BepInPlugin("Truinto.UnityCheats", "UnityCheats", "1.0.0")]
+    [BepInPlugin("Truinto." + ModInfo.MOD_NAME, ModInfo.MOD_NAME, ModInfo.MOD_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
         private Button F4Key = null!;

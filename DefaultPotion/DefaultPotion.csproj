@@ -11,7 +11,6 @@
 
 	<ItemGroup>
 		<Reference Private="false" Include="PotionCraft.Scripts" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/PotionCraft.Scripts.dll" Publicize="true" />
-		
 		<Reference Private="false" Include="0Harmony" HintPath="$(ProgramFolder)/BepInEx/core/0Harmony.dll" />
 		<Reference Private="false" Include="BepInEx" HintPath="$(ProgramFolder)/BepInEx/core/BepInEx.dll" />
 		<Reference Private="false" Include="PotionCraft.Core" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/PotionCraft.Core.dll" />
@@ -22,7 +21,6 @@
 		<Reference Private="false" Include="UnityEngine.InputLegacyModule" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/UnityEngine.InputLegacyModule.dll" />
 		<Reference Private="false" Include="UnityEngine.Physics2DModule" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/UnityEngine.Physics2DModule.dll" />
 		<Reference Private="false" Include="Newtonsoft.Json" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/Newtonsoft.Json.dll" />
-
 		<!--<Reference Private="false" Include="UnityMod" HintPath="$(SolutionDir)/@Shared/UnityMod-net472.dll" />-->
 
 		<Compile Include="$(SharedDir)General/Attributes.cs" Link="Shared/Attributes.cs" />

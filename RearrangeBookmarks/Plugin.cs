@@ -13,7 +13,7 @@ using UnityEngine;
 
 namespace RearrangeBookmarks
 {
-    [BepInPlugin("Truinto.RearrangeBookmarks", "RearrangeBookmarks", "1.1.0")]
+    [BepInPlugin("Truinto." + ModInfo.MOD_NAME, ModInfo.MOD_NAME, ModInfo.MOD_VERSION)]
     public partial class Plugin : BaseUnityPlugin
     {
         private Button? F4Key;

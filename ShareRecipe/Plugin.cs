@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace ShareRecipe
 {
-    [BepInPlugin("Truinto.ShareRecipe", "ShareRecipe", "1.0.2")]
+    [BepInPlugin("Truinto." + ModInfo.MOD_NAME, ModInfo.MOD_NAME, ModInfo.MOD_VERSION)]
     public partial class Plugin : BaseUnityPlugin
     {
         private static Button? F4Key;

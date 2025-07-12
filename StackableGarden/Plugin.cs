@@ -4,7 +4,7 @@ using PotionCraft.ScriptableObjects.BuildZone;
 
 namespace StackableGarden
 {
-    [BepInPlugin("Truinto.StackableGarden", "StackableGarden", "1.0.0")]
+    [BepInPlugin("Truinto." + ModInfo.MOD_NAME, ModInfo.MOD_NAME, ModInfo.MOD_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
         public void Awake()

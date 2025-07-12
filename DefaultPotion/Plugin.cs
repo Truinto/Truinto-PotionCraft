@@ -17,7 +17,7 @@ using UnityEngine;
 
 namespace DefaultPotion
 {
-    [BepInPlugin("Truinto.DefaultPotion", "DefaultPotion", "1.0.1")]
+    [BepInPlugin("Truinto." + ModInfo.MOD_NAME, ModInfo.MOD_NAME, ModInfo.MOD_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
         private Button? F4Key;
