@@ -11,6 +11,7 @@ Index
 * [RearrangeBookmarks](#rearrangebookmarks)
 * [ShareRecipe](#sharerecipe)
 * [StackableGarden](#stackablegarden)
+* [MagicGarden](#magicgarden)
 * [Build](#build)
 
 Disclaimers
@@ -35,6 +36,7 @@ Content
 * RearrangeBookmarks: Press space-bar to align all recipes. Some configuration possible. Works with BookmarkOrganizer.
 * ShareRecipe: Adds hotkeys (CTRL+C; CTRL+V) to export/import recipes and (CTRL+D; CTRL+F) to export/import the whole recipe book. Uses clipboard. Works with BookmarkOrganizer.
 * StackableGarden: Removes collision from garden plants/crystals.
+* MagicGarden: Automatically harvest, water, and fertilize your garden. No lag.
 
 DefaultPotion
 -----------
@@ -46,11 +48,15 @@ When you press space-bar on while the recipe book is open, it will rearrange all
 
 ShareRecipe
 -----------
-CTRL+C serializes the currently shown bookmark into your clipboard. CTRL+V deserializes the same data, if the current page is blank. Otherwise no action is done. CTRL+D serializes the whole recipe book into your clipboard. CTRL+F deserializes the same data. Doing so will destroy the recipe book. It also copies the count of empty bookmarks. This can be used for cheating.
+CTRL+C serializes the currently shown bookmark into your clipboard. CTRL+V deserializes the same data, if the current page is blank. Otherwise no action is done. CTRL+D serializes the whole recipe book into your clipboard. CTRL+F deserializes the same data. Doing so will destroy the recipe book. It also copies the count of empty bookmarks. This can be used for cheating. The data is compressed and turned into a base64 string. Use the hotkeys with shift to get raw output.
 
 StackableGarden
 -----------
 Removes collision from garden plants/crystals.
+
+MagicGarden
+-----------
+Harvests, waters, and fertilizes all garden plants and crystals. Heavily optimized to prevent lagging. You get a neat result screen. Trigger manually with CTRL+G or automatically starting day 4.
 
 Build
 -----------

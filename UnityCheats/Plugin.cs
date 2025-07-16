@@ -1,31 +1,35 @@
 ﻿using BepInEx;
+using DarkScreenSystem;
 using HarmonyLib;
+using PotionCraft.FactionSystem;
 using PotionCraft.InputSystem;
 using PotionCraft.InventorySystem;
+using PotionCraft.LocalizationSystem;
 using PotionCraft.ManagersSystem;
+using PotionCraft.ManagersSystem.BuildMode.Settings;
+using PotionCraft.ManagersSystem.Ingredient;
 using PotionCraft.ManagersSystem.RecipeMap;
 using PotionCraft.ObjectBased.RecipeMap;
+using PotionCraft.ObjectBased.UIElements.ConfirmationWindowSystem;
 using PotionCraft.ObjectBased.UIElements.ElementChangerWindow.AlchemySubstanceCustomizationWindow;
+using PotionCraft.ObjectBased.UIElements.FloatingText;
 using PotionCraft.QuestSystem;
 using PotionCraft.SceneLoader;
 using PotionCraft.ScriptableObjects;
 using PotionCraft.ScriptableObjects.Ingredient;
 using PotionCraft.ScriptableObjects.Potion;
-using System.Runtime.InteropServices;
-using UnityEngine;
 using Shared.CollectionNS;
-using PotionCraft.FactionSystem;
-using PotionCraft.ObjectBased.ElementSystem;
-using JetBrains.Annotations;
+using System.Globalization;
+using UnityEngine;
 
 namespace UnityCheats
 {
     [BepInPlugin("Truinto." + ModInfo.MOD_NAME, ModInfo.MOD_NAME, ModInfo.MOD_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-        private Button F4Key = null!;
-        private Button RotateKey = null!;
-        private Button ShiftKey = null!;
+        private Button? F4Key;
+        private Button? RotateKey;
+        private Button? ShiftKey;
         private bool Rotating = false;
 
         public void Awake()
@@ -43,6 +47,9 @@ namespace UnityCheats
             cmd = new Command("RotatePotion", [new HotKey([KeyboardKey.Get(KeyCode.O)])]);
             cmd.onDownedEvent.AddListener(() => Rotating = true);
 
+            cmd = new Command("TruintoDebug", [new HotKey([KeyboardKey.Get(KeyCode.LeftControl), KeyboardKey.Get(KeyCode.X)])]);
+            cmd.onDownedEvent.AddListener(TruintoDebug);
+
             Harmony.CreateAndPatchAll(typeof(Plugin));
 
             ObjectsLoader.onLoadingEnd.AddListener(OnLoadingEnd);
@@ -55,11 +62,11 @@ namespace UnityCheats
 
         public void Update()
         {
-            if (RotateKey.State is State.Upped) // CommandInvokeRepeater?
+            if (RotateKey?.State == State.Upped) // CommandInvokeRepeater?
                 Rotating = false;
             else if (Rotating)
                 RotatePotion();
-            if (F4Key.State is State.JustDowned)
+            if (F4Key?.State == State.JustDowned)
             {
             }
         }
@@ -96,7 +103,7 @@ namespace UnityCheats
 
             Managers.RecipeMap.indicatorRotation.SetRotatorType(IndicatorRotatorType.Other);
 
-            if (ShiftKey.State == State.Downed)
+            if (ShiftKey?.State == State.Downed)
                 Managers.RecipeMap.indicatorRotation.RotateTo(Managers.RecipeMap.indicatorRotation.Value - 1f);
             else
                 Managers.RecipeMap.indicatorRotation.RotateTo(Managers.RecipeMap.indicatorRotation.Value + 1f);
@@ -245,6 +252,57 @@ namespace UnityCheats
             }
         }
 
+        public static void ShowFloatingMessage(string msg, Vector3 position = default, float time = 2f)
+        {
+            if (position == Vector3.zero)
+                position = (Vector2)Managers.Cursor.cursor.transform.position + PlantsSubManagerSettings.Asset.floatingTextCursorSpawnOffset;
+
+            var floatingText = UnityEngine.Object.Instantiate(IngredientManagerSettings.Asset.CollectedFloatingText.gameObject, position, Quaternion.identity, Managers.Game.Cam.transform).GetComponent<CollectedFloatingText>();
+            floatingText.lifeTime = time;
+            floatingText.delayBeforeFadingOut = time - 0.5f;
+            floatingText.velocity = Vector3.zero;
+            floatingText.SpawnNewText(new CollectedFloatingText.FloatingTextContent(msg, CollectedFloatingText.FloatingTextContent.Type.Text));
+            floatingText.UpdateLayout();
+            floatingText.positionOnStart = floatingText.transform.position;
+        }
+
+        public static void ShowMessageBox(string msg, string title, Action? onClick = null)
+        {
+            var confirmationSettings = new ConfirmationWindowShowSettings(
+                darkScreenLayer: DarkScreenLayer.Lower,
+                titleKey: new Key("#parameters_1", [title], KeyParametersStyle.Normal, null),
+                descriptionKey: new Key("#parameters_1", [msg], KeyParametersStyle.Normal, null),
+                sprite: null,
+                position: Vector2.zero,
+                onOkClickAction: onClick,
+                colorizeFirstCharacter: false
+                );
+            ConfirmationWindowsCollection.Asset.ShowWindow(confirmationSettings);
+        }
+
+        internal static float DebugValue = 2f;
+        private static void TruintoDebug()
+        {
+            if (KeyboardKey.Get(KeyCode.LeftShift).State == State.Downed)
+                DebugValue -= 0.01f;
+            else
+                DebugValue += 0.1f;
+            ShowFloatingMessage($"Debug {DebugValue.ToString("F2", CultureInfo.InvariantCulture)}"); //, new(19.0f, 5.20f, 0.00f));
+            //ShowMessageBox($"Message Body<sprite=\"IngredientsAtlas\" name=\"SpeechBubble ExclamationMark Icon\">", "Auto Gardening");
+        }
+
+        private static void PrintAllLocalizedText()
+        {
+            foreach (var d1 in LocalizationManager.localizationData.data)
+            {
+                Debug.Log($"{d1}:");
+                foreach (var d2 in d1.Value.text)
+                {
+                    Debug.Log($"\t{d2.Key}: {d2.Value}");
+                }
+            }
+        }
+
         private static List<Icon>? _orderedIcons;
         public static List<Icon> OrderedIcons
         {
@@ -268,7 +326,12 @@ namespace UnityCheats
                 return _orderedIcons;
             }
         }
+
+        #region collection dump
+
         public static string[] CustomIconOrder = ["QuestionMark", "Healing", "Cross2", "TwoCrosses", "ThreeCrosses", "Poison", "DissolvingSword", "Fire", "Flame", "FireSpiral", "Frost", "Snowflake", "Snowflakes", "Explosion", "Explosion2", "Explosion3", "Lightning", "Lightning2", "Lightning3", "Acid", "Drop1", "Sprout", "Sprout2", "BicepArm", "MuscleMan", "CatPaw", "JumpingPuma", "WingedBoots", "HighBoot", "MagicalVision", "Eye", "Mana", "MagicWand", "Light", "Light2", "Light3", "Sleep", "Moon", "Snail", "Bull'sHead2", "BullHead", "FullBull", "Enchantment", "Hearts", "Fig", "Sex", "Transparency", "Teleportation2", "Teleportation1", "Wings2", "Wings1", "Necromancy", "ExplodingSkull", "StoneSkin", "StoneShield", "PoisonProtection", "AcidProtection", "LightningProtection", "FireProtection", "FrostProtection", "MagicProtection", "MagicShield", "FireballShield", "Glue", "StickyBoot", "Oilcan", "SickCloud", "SkullCloud", "Incense", "Perfume", "Shrinking", "Enlargement", "Apple", "Harp", "Lyre", "Scream", "PsychedelicSpiral", "HorseshoeUp", "HorseshoeDown", "Shamrock", "VoodooDoll", "Nigredo", "Albedo", "Citrinitas", "Rubedo", "Philosopher'sStone", "VoidSalt", "MoonSalt", "SunSalt", "LifeSalt", "Philosopher'sSalt", "OliveOil", "BerserkerAxe1", "Wheat", "Spring", "SlowDown", "StoneFigure", "Cross1", "Sword", "Swords", "BerserkerAxe2", "BowAndArrow", "Staff", "WizardHat", "Cloak", "Ring", "Goblet", "Juggler", "CurvedHorn", "WarHorn", "Trumpets", "Cymbals", "Bell", "Drum", "Magnet", "Anvil", "Hammer", "Sickle", "Weight", "ElfEar", "Torso", "BubbleLungs", "VikingHead", "MedusaHead", "Illithid", "BrainWaves", "AstralFace", "ThirdEye", "MasonEye", "BlindEye", "PsychedelicEye", "CrossedEye", "Ouroboros", "Astral2", "MagicStar", "Astral1", "Telekinesis", "Brain", "RadiatingBrain", "InkblotBrain", "RadiatingHeart", "Bones", "SkullAndBones1", "SkullAndBones2", "BurningBones", "BoneCloud", "Tombstone", "BaphometPentagram", "DissolvingPentagram", "DissolvingSpiral", "Bird", "Eagle", "Feather1", "Feather2", "Wing", "Cloud", "MistCloud", "SmokeCloud1", "SmokeCloud2", "Poo1", "Poo2", "UnknownSubstance", "Fir", "Tree", "Leaf3", "Leaf5", "Leaf4", "Leaf1", "Leaf2", "Flower1", "Flower2", "Lotus", "Stump", "Ginseng", "Banana", "Fruits", "PsychedelicMushrooms", "BerserkerMushroom", "Hypnotoad", "Weasel", "Kangaroo", "Spring2", "Virus", "Inkblot1", "Inkblot2", "BarbedCone", "Drop2", "MagicDrop", "Bubble", "Bubbles", "Ship", "Flag1", "Flag2", "4PointStarMedium", "4PointStarLarge", "5PointStarMedium", "5PointStarLarge", "6PointStarMedium", "6PointStarLarge", "7PointStarLarge", "8PointStarLarge", "8PointDoubleStarLarge", "Award", "OvalSmall", "OvalLarge", "CircleSmall", "CircleMedium", "CircleGem", "CircleDouble", "CircleTriple", "Rhombus", "RhombusSmall", "RhombusGem", "RhombusDouble", "PentagonMedium", "PentagonGem", "PentagonGemLarge", "HexagonMedium", "HexagonGem", "ExclamationMark", "Herbalist", "Mushroomer", "Dwarf", "Chest", "DoorWooden", "DoorMetal", "DoorOpen", "IronBars", "Key1", "Key2", "Lock", "LockBroken", "Lockpicking",];
         public static string[] AllIngredients = ["Windbloom", "Featherbloom", "FoggyParasol", "Fluffbloom", "Whirlweed", "PhantomSkirt", "CloudCrystal", "WitchMushroom", "ThunderThistle", "DreamBeet", "ShadowChanterelle", "Mageberry", "ArcaneCrystal", "Waterbloom", "Icefruit", "Tangleweed", "Coldleaf", "KrakenMushroom", "Watercap", "FrostSapphire", "Lifeleaf", "Goodberry", "DruidsRosemary", "MossShroom", "HealersHeather", "EvergreenFern", "LifeCrystal", "Terraria", "DryadsSaddle", "Poopshroom", "Weirdshroom", "Goldthorn", "Mudshroom", "EarthPyrite", "StinkMushroom", "GoblinMushroom", "Marshroom", "HairyBanana", "Thornstick", "GraveTruffle", "PlagueStibnite", "Firebell", "SulphurShelf", "Lavaroot", "Flameweed", "MagmaMorel", "DragonPepper", "FireCitrine", "MadMushroom", "Bloodthorn", "TerrorBud", "GraspingRoot", "Boombloom", "LustMushroom", "BloodRuby", "RainbowCap", "FableBismuth",];
+
+        #endregion
     }
 }
