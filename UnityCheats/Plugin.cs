@@ -1,25 +1,43 @@
 ﻿using BepInEx;
 using DarkScreenSystem;
 using HarmonyLib;
+using JetBrains.Annotations;
+using PotionCraft.Core.Extensions;
 using PotionCraft.FactionSystem;
 using PotionCraft.InputSystem;
 using PotionCraft.InventorySystem;
 using PotionCraft.LocalizationSystem;
 using PotionCraft.ManagersSystem;
 using PotionCraft.ManagersSystem.BuildMode.Settings;
+using PotionCraft.ManagersSystem.Environment;
 using PotionCraft.ManagersSystem.Ingredient;
+using PotionCraft.ManagersSystem.Potion;
 using PotionCraft.ManagersSystem.RecipeMap;
+using PotionCraft.ObjectBased.PhysicalParticle;
 using PotionCraft.ObjectBased.RecipeMap;
+using PotionCraft.ObjectBased.RecipeMap.RecipeMapItem.IndicatorMapItem;
+using PotionCraft.ObjectBased.Salt;
+using PotionCraft.ObjectBased.Stack;
+using PotionCraft.ObjectBased.Stack.StackItem;
+using PotionCraft.ObjectBased.UIElements.Books.RecipeBook;
 using PotionCraft.ObjectBased.UIElements.ConfirmationWindowSystem;
 using PotionCraft.ObjectBased.UIElements.ElementChangerWindow.AlchemySubstanceCustomizationWindow;
 using PotionCraft.ObjectBased.UIElements.FloatingText;
+using PotionCraft.ObjectBased.UIElements.PotionDescriptionWindow;
 using PotionCraft.QuestSystem;
 using PotionCraft.SceneLoader;
 using PotionCraft.ScriptableObjects;
 using PotionCraft.ScriptableObjects.Ingredient;
 using PotionCraft.ScriptableObjects.Potion;
+using PotionCraft.ScriptableObjects.Salts;
+using PotionCraft.Settings;
+using Shared;
 using Shared.CollectionNS;
 using System.Globalization;
+using System.Reflection;
+using System.Reflection.Emit;
+using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace UnityCheats
@@ -30,6 +48,7 @@ namespace UnityCheats
         private Button? F4Key;
         private Button? RotateKey;
         private Button? ShiftKey;
+        private Button? EnterKey;
         private bool Rotating = false;
 
         public void Awake()
@@ -37,18 +56,19 @@ namespace UnityCheats
             F4Key = KeyboardKey.Get(KeyCode.F4);
             RotateKey = KeyboardKey.Get(KeyCode.O);
             ShiftKey = KeyboardKey.Get(KeyCode.LeftShift);
+            EnterKey = KeyboardKey.Get(KeyCode.KeypadEnter);
 
-            var cmd = new Command("TeleportPotionToMouse", [new HotKey([KeyboardKey.Get(KeyCode.Q)])]);
+            var cmd = new Command("TruintoTeleportPotionToMouse", [new HotKey([KeyboardKey.Get(KeyCode.LeftControl), KeyboardKey.Get(KeyCode.Q)])]);
             cmd.onDownedEvent.AddListener(TeleportPotionToMouse);
 
-            cmd = new Command("HealPotion", [new HotKey([KeyboardKey.Get(KeyCode.H)])]);
+            cmd = new Command("TruintoHealPotion", [new HotKey([KeyboardKey.Get(KeyCode.LeftControl), KeyboardKey.Get(KeyCode.H)])]);
             cmd.onDownedEvent.AddListener(HealPotion);
 
-            cmd = new Command("RotatePotion", [new HotKey([KeyboardKey.Get(KeyCode.O)])]);
+            cmd = new Command("TruintoRotatePotion", [new HotKey([KeyboardKey.Get(KeyCode.O)])]);
             cmd.onDownedEvent.AddListener(() => Rotating = true);
 
-            cmd = new Command("TruintoDebug", [new HotKey([KeyboardKey.Get(KeyCode.LeftControl), KeyboardKey.Get(KeyCode.X)])]);
-            cmd.onDownedEvent.AddListener(TruintoDebug);
+            cmd = new Command("TruintoScripting", [new HotKey([KeyboardKey.Get(KeyCode.LeftControl), KeyboardKey.Get(KeyCode.X)])]);
+            cmd.onDownedEvent.AddListener(StartScripting);
 
             Harmony.CreateAndPatchAll(typeof(Plugin));
 
@@ -68,6 +88,52 @@ namespace UnityCheats
                 RotatePotion();
             if (F4Key?.State == State.JustDowned)
             {
+            }
+            //if (EnterKey?.State == State.JustDowned)
+            //{
+            //    if (Managers.Potion.descriptionWindow.isShowing)
+            //    {
+            //        Managers.Potion.descriptionWindow.descriptionInputField.DeactivateInputField();
+            //        Managers.Potion.descriptionWindow.Show(false, default);
+            //    }
+            //}
+
+            if (ScriptStirLeft <= 0f)
+                ScriptStirLeft = 0f;
+            else if (ScriptStirLeft > 0.01f)
+            {
+                Managers.RecipeMap.indicator.lengthToDeleteFromPath += 0.01f;
+                ScriptStirLeft -= 0.01f;
+            }
+            else
+            {
+                Managers.RecipeMap.indicator.lengthToDeleteFromPath += ScriptStirLeft;
+                ScriptStirLeft = 0;
+            }
+
+            if (ScriptLadleLeft <= 0f)
+                ScriptLadleLeft = 0f;
+            else if (ScriptLadleLeft > 0.1f)
+            {
+                Managers.RecipeMap.MoveIndicatorByLadle(1f);
+                ScriptLadleLeft -= 0.1f;
+            }
+            else
+            {
+                ScriptLadleLeft = 0;
+            }
+
+            if (ScriptHeatLeft <= 0f)
+                ScriptHeatLeft = 0f;
+            else if (ScriptHeatLeft > 0.01f)
+            {
+                Managers.Ingredient.coals.Heat += 0.01f;
+                ScriptHeatLeft -= 0.01f;
+            }
+            else
+            {
+                Managers.Ingredient.coals.Heat += ScriptHeatLeft;
+                ScriptHeatLeft = 0;
             }
         }
 
@@ -108,6 +174,285 @@ namespace UnityCheats
             else
                 Managers.RecipeMap.indicatorRotation.RotateTo(Managers.RecipeMap.indicatorRotation.Value + 1f);
         }
+
+        #region Scripting
+
+        /*
+         * NonTeleportationFixedHint.RunAlongPath
+         * TeleportationFixedHint.RunAlongPath
+         * 
+         * 
+         * Record teleport from crystals
+         * Stop recording when potion resets; not when ctrl+X
+         * 
+         * ladle
+         * RecipeMapManager.MoveIndicatorTowardsObject
+         */
+
+        public static void StartScripting()
+        {
+            ShowInputBox("Script", null, default, ProcessScript);
+        }
+
+        public static StringBuilder PotionLogger = new();
+        public static float PotionFloat;
+
+        public static void ScriptFlush(RecipeBookRecipeMarkType nextType, string? nextString = null, float nextFloat = 0f)
+        {
+            // look for last action; if next action is something new, record the result, otherwise accumulate
+            var mark = Managers.Potion.recipeMarks.GetMarksList().LastOrDefault();
+            if (mark != null)
+            {
+                switch (mark.type)
+                {
+                    case RecipeBookRecipeMarkType.Spoon:
+                        if (nextType != RecipeBookRecipeMarkType.Spoon)
+                        {
+                            if (PotionFloat > 0f)
+                            {
+                                PotionLogger.AppendLine($"Stir: {PotionFloat.ToString("G9", CultureInfo.InvariantCulture)}");
+                                ShowFloatingMessage($"stir ={PotionFloat.ToString(CultureInfo.InvariantCulture)}", time: 1f);
+                            }
+                            PotionFloat = 0f;
+                        }
+                        else
+                        {
+                            // TODO: if nextFloat is large, apply multiplier? (0.99f)
+                            PotionFloat += nextFloat;
+                            ShowFloatingMessage($"stir +{nextFloat.ToString("G9", CultureInfo.InvariantCulture)} ={PotionFloat.ToString(CultureInfo.InvariantCulture)}", time: 1f);
+                        }
+                        break;
+
+                    case RecipeBookRecipeMarkType.Ladle:
+                        if (nextType != RecipeBookRecipeMarkType.Ladle)
+                        {
+                            if (PotionFloat > 0f)
+                            {
+                                PotionLogger.AppendLine($"Ladle: {PotionFloat.ToString("G9", CultureInfo.InvariantCulture)}");
+                                ShowFloatingMessage($"ladle ={PotionFloat.ToString(CultureInfo.InvariantCulture)}", time: 1f);
+                            }
+                            PotionFloat = 0f;
+                        }
+                        else
+                        {
+                            PotionFloat += nextFloat;
+                            ShowFloatingMessage($"ladle +{nextFloat.ToString("G9", CultureInfo.InvariantCulture)} ={PotionFloat.ToString(CultureInfo.InvariantCulture)}", time: 1f);
+                        }
+                        break;
+
+                    case RecipeBookRecipeMarkType.Bellows:
+                        if (nextType != RecipeBookRecipeMarkType.Bellows)
+                        {
+                            if (PotionFloat > 0f)
+                            {
+                                PotionLogger.AppendLine($"Heat: {PotionFloat.ToString("G9", CultureInfo.InvariantCulture)}");
+                                ShowFloatingMessage($"heat ={PotionFloat.ToString(CultureInfo.InvariantCulture)}", time: 1f);
+                            }
+                            PotionFloat = 0f;
+                        }
+                        else
+                        {
+                            PotionFloat += nextFloat;
+                            ShowFloatingMessage($"heat +{nextFloat.ToString("G9", CultureInfo.InvariantCulture)} ={PotionFloat.ToString(CultureInfo.InvariantCulture)}", time: 1f);
+                        }
+                        break;
+                }
+            }
+
+            // these can be recorded immedately
+            switch (nextType)
+            {
+                case RecipeBookRecipeMarkType.Salt:
+                    PotionLogger.AppendLine($"Salt: {nextString}:{Mathf.RoundToInt(nextFloat)}");
+                    break;
+                case RecipeBookRecipeMarkType.Ingredient:
+                    PotionLogger.AppendLine($"Ingredient: {nextString}:{nextFloat.ToString("G9", CultureInfo.InvariantCulture)}");
+                    break;
+            }
+        }
+
+        [HarmonyPatch(typeof(PotionManager.RecipeMarksSubManager), nameof(PotionManager.RecipeMarksSubManager.ResetCurrentRecipeMarks))]
+        [HarmonyPrefix]
+        public static void Patch1()
+        {
+            ScriptFlush(default);
+            PotionLogger.Clear();
+        }
+
+        [HarmonyPatch(typeof(PotionManager.RecipeMarksSubManager), nameof(PotionManager.RecipeMarksSubManager.AddSaltMark))]
+        [HarmonyPrefix]
+        public static void Patch2(Salt salt)
+        {
+            ScriptFlush(RecipeBookRecipeMarkType.Salt, salt.name);
+        }
+
+        [HarmonyPatch(typeof(PotionManager.RecipeMarksSubManager), nameof(PotionManager.RecipeMarksSubManager.AddIngredientMark))]
+        [HarmonyPrefix]
+        public static void Patch3(Ingredient ingredient, float grindStatus)
+        {
+            ScriptFlush(RecipeBookRecipeMarkType.Ingredient, ingredient.name, grindStatus);
+        }
+
+        [HarmonyPatch(typeof(PotionManager.RecipeMarksSubManager), nameof(PotionManager.RecipeMarksSubManager.AddSpoonMark))]
+        [HarmonyPrefix]
+        public static void Patch4(float spoonValue)
+        {
+            ScriptFlush(RecipeBookRecipeMarkType.Spoon, nextFloat: spoonValue);
+        }
+
+        [HarmonyPatch(typeof(RecipeMapManager), nameof(RecipeMapManager.MoveIndicatorByLadle))]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> Patch5(IEnumerable<CodeInstruction> code, ILGenerator generator, MethodBase original)
+        {
+            var tool = new TranspilerTool(code, generator, original);
+            tool.Seek(typeof(RecipeMapManagerIndicatorSettings), nameof(RecipeMapManagerIndicatorSettings.ladleIndicatorRotationTime));
+            tool.Offset(1);
+            tool.NameLocal("movedDistance");
+            tool.Seek(typeof(RecipeMapManager), nameof(RecipeMapManager.MoveIndicatorTowardsObject));
+            tool.InsertAfter(patch);
+            return tool;
+            static void patch([LocalParameter("movedDistance")] float movedDistance)
+            {
+                if (movedDistance > 0f)
+                    ScriptFlush(RecipeBookRecipeMarkType.Ladle, nextFloat: movedDistance);
+            }
+        }
+
+        [HarmonyPatch(typeof(RecipeMapManager), nameof(RecipeMapManager.MoveIndicatorTowardsVortex))]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> Patch6(IEnumerable<CodeInstruction> code, ILGenerator generator, MethodBase original)
+        {
+            var tool = new TranspilerTool(code, generator, original);
+            tool.Seek(tool.GetLocal(typeof(float), "distance"), false);
+            tool.InsertAfter(patch);
+            return tool;
+            static void patch([LocalParameter("distance")] float distance)
+            {
+                const float mult = 17.714f / 21.0617428f;
+                if (distance > 0f)
+                    ScriptFlush(RecipeBookRecipeMarkType.Bellows, nextFloat: distance * mult);
+            }
+        }
+
+        public static void ProcessScript(string value)
+        {
+            if (value.Length <= 0)
+                return;
+
+            if (value[0] == 'p')
+            {
+                ScriptFlush(default);
+                ShowInputBox("Output", PotionLogger.ToString(), default, null);
+                return;
+            }
+
+            Match match; int count; float amount;
+            if ((match = Regex.Match(value, @"Ingredient: (\w+):([\d\.]+)")).Success)
+            {
+                float.TryParse(match.Groups[2].Value, NumberStyles.Number, CultureInfo.InvariantCulture, out amount);
+                ScriptAddIngredient(match.Groups[1].Value, amount);
+                return;
+            }
+            if ((match = Regex.Match(value, @"Salt: (\w+):(\d+)")).Success)
+            {
+                int.TryParse(match.Groups[2].Value, out count);
+                ScriptAddSalt(match.Groups[1].Value, count);
+                return;
+            }
+            if ((match = Regex.Match(value, @"Stir: ([\d\.]+)")).Success)
+            {
+                float.TryParse(match.Groups[1].Value, NumberStyles.Number, CultureInfo.InvariantCulture, out amount);
+                ScriptAddStir(amount);
+                return;
+            }
+            if ((match = Regex.Match(value, @"Ladle: ([\d\.]+)")).Success)
+            {
+                float.TryParse(match.Groups[1].Value, NumberStyles.Number, CultureInfo.InvariantCulture, out amount);
+                ScriptAddLadle(amount);
+                return;
+            }
+            if ((match = Regex.Match(value, @"Heat: ([\d\.]+)")).Success)
+            {
+                float.TryParse(match.Groups[1].Value, NumberStyles.Number, CultureInfo.InvariantCulture, out amount);
+                ScriptAddHeat(amount);
+                return;
+            }
+        }
+
+        public static void ScriptAddIngredient(string name, float grindStatus)
+        {
+            var positionInventory = new Vector2(6f, 0f);
+            var positioncauldron = (Vector2)Managers.Ingredient.cauldron.transform.position + Managers.Ingredient.cauldron.spawnAboveCauldronFromScenePosition;
+
+            var ingredient = Managers.Player.Inventory.items.FirstOrDefault(f => f.Key is Ingredient && f.Key.name == name);
+            if (ingredient.Value >= 1)
+            {
+                Managers.Player.Inventory.RemoveItem(ingredient.Key, 1, false);
+
+                // see StackThrower.TryThrowToCauldron()
+                var stack = Stack.SpawnNewItemStack(positionInventory, (Ingredient)ingredient.Key, Managers.Player.InventoryPanel);
+                stack.state.TryToSet(StateMachine.State.InHand);
+                stack.transform.Rotate(Vector3.forward * UnityEngine.Random.Range(0, 360));
+                stack.isFallingFromPanel = true;
+                stack.thisRigidbody.ThrowTowardsTheTarget(positioncauldron, EnvironmentManagerSettings.Asset.stackThrowingHeightRangeInRoom);
+
+                foreach (var item in stack.itemsFromThisStack)
+                {
+                    if (item is not IngredientFromStack leave)
+                        continue;
+                    for (int i = 0; i < 3 && leave.currentGrindState < 3 && !leave.IsDestroyed; i++)
+                        leave.NextGrindState();
+                }
+                stack.leavesGrindStatus = grindStatus;
+                stack.substanceGrinding.grindTicksPerformed = stack.substanceGrinding.GrindTicksToFullGrind * grindStatus;
+                stack.substanceGrinding._currentGrindStatus = grindStatus;
+                stack.UpdateOverallGrindStatus();
+                stack.UpdateGrindedSubstance();
+                ShowFloatingMessage($"set grind to {stack.overallGrindStatus:P2}", time: 5f);
+            }
+        }
+
+        public static void ScriptAddSalt(string name, int count)
+        {
+            var positioncauldron = (Vector2)Managers.Ingredient.cauldron.transform.position + Managers.Ingredient.cauldron.spawnAboveCauldronFromScenePosition;
+
+            var salt = Managers.Player.Inventory.items.FirstOrDefault(f => f.Key is Salt && f.Key.name == name);
+            if (salt.Value >= count)
+            {
+                Managers.Player.Inventory.RemoveItem(salt.Key, count, false);
+                for (int i = 0; i < count; i++)
+                    PhysicalParticle.SpawnSaltParticle((Salt)salt.Key, positioncauldron + new Vector2(UnityEngine.Random.Range(-1f, 1f), UnityEngine.Random.Range(0f, 3f)), Vector2.zero);
+                ShowFloatingMessage($"add salt {count}", time: 5f);
+            }
+        }
+
+        public static float ScriptStirLeft;
+        public static void ScriptAddStir(float amount)
+        {
+            //Managers.RecipeMap.indicator.lengthToDeleteFromPath += amount;
+            ScriptStirLeft = amount;
+            ShowFloatingMessage($"add stir {amount:G9}", time: 5f);
+        }
+
+        public static float ScriptLadleLeft;
+        public static void ScriptAddLadle(float amount)
+        {
+            //Managers.RecipeMap.MoveIndicatorByLadle(amount);
+            ScriptLadleLeft = amount;
+            ShowFloatingMessage($"add ladle {amount:G9}", time: 5f);
+        }
+
+        public static float ScriptHeatLeft;
+        public static void ScriptAddHeat(float amount)
+        {
+            //Managers.Ingredient.coals.Heat = amount;
+            ScriptHeatLeft = amount;
+            ShowFloatingMessage($"add heat {amount:G9}", time: 5f);
+        }
+
+        #endregion
+
+        #region Printout
 
         public void PrintQuests()
         {
@@ -188,6 +533,22 @@ namespace UnityCheats
             }
         }
 
+        public static void PrintAllLocalizedText()
+        {
+            foreach (var d1 in LocalizationManager.localizationData.data)
+            {
+                Debug.Log($"{d1}:");
+                foreach (var d2 in d1.Value.text)
+                {
+                    Debug.Log($"\t{d2.Key}: {d2.Value}");
+                }
+            }
+        }
+
+        #endregion
+
+        #region Patches
+
         [HarmonyPatch(typeof(QuestRequirementCertainIngredient), nameof(QuestRequirementCertainIngredient.GetIngredient))]
         [HarmonyPrefix]
         public static void PatchQuests1(Quest quest, List<GeneratedQuestRequirement> generatedRequirements, HashSet<string> usedIngredients, QuestRequirementCertainIngredient __instance)
@@ -252,6 +613,10 @@ namespace UnityCheats
             }
         }
 
+        #endregion
+
+        #region Messageboxes
+
         public static void ShowFloatingMessage(string msg, Vector3 position = default, float time = 2f)
         {
             if (position == Vector3.zero)
@@ -280,28 +645,30 @@ namespace UnityCheats
             ConfirmationWindowsCollection.Asset.ShowWindow(confirmationSettings);
         }
 
-        internal static float DebugValue = 2f;
-        private static void TruintoDebug()
+        public static void ShowInputBox(string title, string? body, Vector2 position, Action<string>? onClose)
         {
-            if (KeyboardKey.Get(KeyCode.LeftShift).State == State.Downed)
-                DebugValue -= 0.01f;
-            else
-                DebugValue += 0.1f;
-            ShowFloatingMessage($"Debug {DebugValue.ToString("F2", CultureInfo.InvariantCulture)}"); //, new(19.0f, 5.20f, 0.00f));
-            //ShowMessageBox($"Message Body<sprite=\"IngredientsAtlas\" name=\"SpeechBubble ExclamationMark Icon\">", "Auto Gardening");
-        }
+            var window = Managers.Potion.descriptionWindow;
+            if (window.isShowing)
+                return;
+            if (position == Vector2.zero)
+                position = Managers.Potion.potionCraftPanel.customizationPanel.customizeDescriptionButton.descriptionWindowPosition;
 
-        private static void PrintAllLocalizedText()
-        {
-            foreach (var d1 in LocalizationManager.localizationData.data)
+            window.descriptionInputField.lineLimit = 0;
+            window.Show(true, position, new Key("#parameters_1", [title], KeyParametersStyle.Normal, null), body);
+            window.descriptionInputField.ActivateInputField();
+            window.onActiveStateChanged.AddListener(inputBoxActiveState);
+
+            void inputBoxActiveState(bool active)
             {
-                Debug.Log($"{d1}:");
-                foreach (var d2 in d1.Value.text)
+                if (!active)
                 {
-                    Debug.Log($"\t{d2.Key}: {d2.Value}");
+                    window.onActiveStateChanged.RemoveListener(inputBoxActiveState);
+                    onClose?.Invoke(window.descriptionInputField.text ?? "");
                 }
             }
         }
+
+        #endregion
 
         private static List<Icon>? _orderedIcons;
         public static List<Icon> OrderedIcons

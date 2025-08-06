@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<Version>1.0.0.112</Version>
+		<Version>1.0.0.192</Version>
 		<AssemblyName>UnityCheats</AssemblyName>
 		<RootNamespace>UnityCheats</RootNamespace>
 		<TargetFramework>net472</TargetFramework>
@@ -20,13 +20,14 @@
 		<Reference Private="false" Include="PotionCraft.DataBaseSystem" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/PotionCraft.DataBaseSystem.dll" Publicize="true" />
 		<Reference Private="false" Include="Unity.TextMeshPro" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/Unity.TextMeshPro.dll" />
 		<Reference Private="false" Include="UnityEngine" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/UnityEngine.dll" />
+		<Reference Private="false" Include="UnityEngine.UI" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/UnityEngine.UI.dll" />
 		<Reference Private="false" Include="UnityEngine.CoreModule" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/UnityEngine.CoreModule.dll" />
 		<Reference Private="false" Include="UnityEngine.InputLegacyModule" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/UnityEngine.InputLegacyModule.dll" />
 		<Reference Private="false" Include="UnityEngine.Physics2DModule" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/UnityEngine.Physics2DModule.dll" />
 		<Reference Private="false" Include="Newtonsoft.Json" HintPath="$(ProgramFolder)/Potion Craft_Data/Managed/Newtonsoft.Json.dll" />
-		<!--<Reference Private="false" Include="UnityMod" HintPath="$(SolutionDir)/@Shared/UnityMod-net472.dll" />-->
-
-		<Compile Include="$(SharedDir)General/Collection.cs" Link="Shared/Collection.cs" />
+		
+		<Reference Private="false" Include="UnityMod" HintPath="$(SharedDir)/UnityMod-net472.dll" />
+		<!--<Compile Include="$(SharedDir)/General/Collection.cs" Link="Shared/Collection.cs" />-->
 	</ItemGroup>
 
 	<!-- Target Automation -->
@@ -35,7 +36,7 @@
 		<VersioningTask_In Include="changelog.md" />
 		<VersioningTask_Out DropRevision="never" Include="$(MSBuildThisFileFullPath)" />
 
-		<!--<TargetMergeItems Include="$(SolutionDir)/@Shared/UnityMod-net472.dll" />-->
+		<TargetMergeItems Include="$(SharedDir)/UnityMod-net472.dll" />
 
 		<TargetCopyTarget Include="$(ModFolder)/" />
 		<TargetCopyDelete Include="$(ModFolder)/$(TargetName).xml" />
